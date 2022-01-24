@@ -5,6 +5,17 @@ from torch.nn import functional as F
 from .types_ import *
 
 
+class Debug(nn.Module):
+    def __init__(self):
+        super(Debug, self).__init__()
+
+    def forward(self, x):
+        # print(x.shape)
+        if x is None:
+            raise AttributeError("failed here")
+        return x
+
+
 class VanillaVAE(BaseVAE):
 
 
@@ -14,7 +25,8 @@ class VanillaVAE(BaseVAE):
                  hidden_dims: List = None,
                  **kwargs) -> None:
         super(VanillaVAE, self).__init__()
-
+        self.in_channels = in_channels
+        self.debug = Debug()
         self.latent_dim = latent_dim
 
         modules = []
@@ -28,19 +40,19 @@ class VanillaVAE(BaseVAE):
                     nn.Conv2d(in_channels, out_channels=h_dim,
                               kernel_size= 3, stride= 2, padding  = 1),
                     nn.BatchNorm2d(h_dim),
-                    nn.LeakyReLU())
+                    nn.LeakyReLU(),
+                    Debug())
             )
             in_channels = h_dim
 
         self.encoder = nn.Sequential(*modules)
+
         self.fc_mu = nn.Linear(hidden_dims[-1]*4, latent_dim)
         self.fc_var = nn.Linear(hidden_dims[-1]*4, latent_dim)
-
+        self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 4)
 
         # Build Decoder
         modules = []
-
-        self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 4)
 
         hidden_dims.reverse()
 
@@ -54,13 +66,14 @@ class VanillaVAE(BaseVAE):
                                        padding=1,
                                        output_padding=1),
                     nn.BatchNorm2d(hidden_dims[i + 1]),
-                    nn.LeakyReLU())
+                    nn.LeakyReLU(),
+                    Debug())
             )
 
 
 
         self.decoder = nn.Sequential(*modules)
-
+        out_channels = self.in_channels
         self.final_layer = nn.Sequential(
                             nn.ConvTranspose2d(hidden_dims[-1],
                                                hidden_dims[-1],
@@ -70,9 +83,10 @@ class VanillaVAE(BaseVAE):
                                                output_padding=1),
                             nn.BatchNorm2d(hidden_dims[-1]),
                             nn.LeakyReLU(),
-                            nn.Conv2d(hidden_dims[-1], out_channels= 3,
+                            nn.Conv2d(hidden_dims[-1], out_channels= out_channels,
                                       kernel_size= 3, padding= 1),
-                            nn.Tanh())
+                            nn.Tanh(),
+                            Debug())
 
     def encode(self, input: Tensor) -> List[Tensor]:
         """
@@ -117,6 +131,7 @@ class VanillaVAE(BaseVAE):
         return eps * std + mu
 
     def forward(self, input: Tensor, **kwargs) -> List[Tensor]:
+        _ = self.debug(input)
         mu, log_var = self.encode(input)
         z = self.reparameterize(mu, log_var)
         return  [self.decode(z), input, mu, log_var]
