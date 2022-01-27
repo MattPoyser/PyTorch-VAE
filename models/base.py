@@ -1,4 +1,9 @@
-from .types_ import *
+import sys
+# awful hack
+sys.path.insert(0, "/hdd/PhD/hem/perceptual/vae/models/")
+sys.path.insert(0, "/home/matt/Documents/hem/perceptual/vae/models/")
+sys.path.insert(0, "/home2/lgfm95/hem/perceptual/vae/models/")
+from types_ import *
 from torch import nn
 from abc import abstractmethod
 

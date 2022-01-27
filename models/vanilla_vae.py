@@ -1,8 +1,13 @@
 import torch
-from models import BaseVAE
+import sys
+# awful hack
+sys.path.insert(0, "/hdd/PhD/hem/perceptual/vae/models/")
+sys.path.insert(0, "/home/matt/Documents/hem/perceptual/vae/models/")
+sys.path.insert(0, "/home2/lgfm95/hem/perceptual/vae/models/")
+from base import BaseVAE
 from torch import nn
 from torch.nn import functional as F
-from .types_ import *
+from types_ import *
 
 
 class Debug(nn.Module):
